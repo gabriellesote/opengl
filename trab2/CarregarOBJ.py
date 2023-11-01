@@ -6,6 +6,9 @@ from PIL import Image
 from io import BytesIO
 from ObjLoader import ObjLoader
 
+'''
+💬 Define o código do shader de vértice. Ele lida com a transformação de coordenadas de vértice.
+'''
 
 vertex_src = """
 # version 330
@@ -27,6 +30,10 @@ void main()
 }
 """
 
+'''
+💬 Define o código do shader de fragmento. Ele lida com a cor dos fragmentos.
+'''
+
 fragment_src = """
 # version 330
 
@@ -41,6 +48,12 @@ void main()
     out_color = texture(s_texture, v_texture);
 }
 """
+
+'''
+💬 Carrega uma textura de um arquivo de imagem.
+    Ela utiliza a biblioteca Pillow (PIL) para abrir a imagem e
+    carregar seus dados. A textura é então gerada e configurada no OpenGL.
+'''
 
 def load_texture_from_file(file_path):
     img = Image.open(file_path)
@@ -58,6 +71,10 @@ def load_texture_from_file(file_path):
 
     return texture_id
 
+'''
+💬 Define uma função de callback para redimensionamento da janela. 
+    Ela é chamada quando a janela é redimensionada e ajusta a viewport e a matriz de projeção.
+'''
 def window_resize(window, width, height):
     glViewport(0, 0, width, height)
     projection = pyrr.matrix44.create_perspective_projection_matrix(45, width / height, 0.1, 100)
@@ -65,6 +82,10 @@ def window_resize(window, width, height):
 
 if not glfw.init():
     raise Exception("glfw cannot be initialized!")
+
+'''
+💬 Inicializa o GLFW e cria uma janela de 1280x720 pixels.
+'''
 
 window = glfw.create_window(1280, 720, "My OpenGL window", None, None)
 
@@ -76,31 +97,53 @@ glfw.set_window_pos(window, 400, 200)
 glfw.set_window_size_callback(window, window_resize)
 glfw.make_context_current(window)
 
-# Load textures directly in the code
+'''
+💬 Carrega duas texturas ('magic.png' e 'watermelon.jpg') usando a 
+    função load_texture_from_file. As texturas são armazenadas em uma lista.
+'''
 textures = [load_texture_from_file("magic.png"), load_texture_from_file("watermelon.jpg")]
 
+'''
+💬 Carrega modelos 3D usando a classe ObjLoader
+'''
 chibi_indices, chibi_buffer = ObjLoader.load_model("modelo/cubo.obj")
 monkey_indices, monkey_buffer = ObjLoader.load_model("modelo/melancia.obj")
 
 shader = compileProgram(compileShader(vertex_src, GL_VERTEX_SHADER), compileShader(fragment_src, GL_FRAGMENT_SHADER))
 
+
+'''
+💬 Cria Vertex Array Objects (VAOs) e Vertex Buffer Objects (VBOs) para os modelos
+'''
 VAO = glGenVertexArrays(2)
 VBO = glGenBuffers(2)
 
+'''
+💬 Configura VAO e VBO para o primeiro modelo (cubo)
+'''
 glBindVertexArray(VAO[0])
 glBindBuffer(GL_ARRAY_BUFFER, VBO[0])
 glBufferData(GL_ARRAY_BUFFER, chibi_buffer.nbytes, chibi_buffer, GL_STATIC_DRAW)
 
+'''
+💬 Configura atributos de vértice para o primeiro modelo
+'''
 glEnableVertexAttribArray(0)
 glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, chibi_buffer.itemsize * 8, ctypes.c_void_p(0))
 glEnableVertexAttribArray(1)
 glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, chibi_buffer.itemsize * 8, ctypes.c_void_p(12))
 glEnableVertexAttribArray(2)
 
+'''
+💬 Configura VAO e VBO para o segundo modelo (melancia)
+'''
 glBindVertexArray(VAO[1])
 glBindBuffer(GL_ARRAY_BUFFER, VBO[1])
 glBufferData(GL_ARRAY_BUFFER, monkey_buffer.nbytes, monkey_buffer, GL_STATIC_DRAW)
 
+'''
+💬 Configura atributos de vértice para o segundo modelo
+'''
 glEnableVertexAttribArray(0)
 glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, monkey_buffer.itemsize * 8, ctypes.c_void_p(0))
 glEnableVertexAttribArray(1)
@@ -126,9 +169,16 @@ view_loc = glGetUniformLocation(shader, "view")
 glUniformMatrix4fv(proj_loc, 1, GL_FALSE, projection)
 glUniformMatrix4fv(view_loc, 1, GL_FALSE, view)
 
-# Defina uma matriz de translação para mover a textura (exemplo: mover 0.1 na direção X)
+'''
+💬 Defina uma matriz de translação para mover a textura (exemplo: mover 0.1 na direção X)
+'''
 texture_translation = pyrr.matrix44.create_from_translation(pyrr.Vector3([0.5, 0.5, 0.9]))
 
+'''
+💬 Entra em um loop principal que renderiza os objetos 3D. 
+    O loop renderiza os objetos (cubo e melancia) com texturas, 
+    aplicando transformações de rotação a eles.
+'''
 while not glfw.window_should_close(window):
     glfw.poll_events()
 
